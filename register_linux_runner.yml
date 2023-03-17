@@ -1,0 +1,54 @@
+---
+# -----------------------------------------------------------------------------
+# Tasks for Ubuntu
+# --------------------------------------------------------------------------
+
+# # Create a github runner for the entire LM organization
+
+- name: include ubuntu linux variables
+  include_vars: ubuntu_linux.yml
+
+- name: register runner with github
+  hosts: linux_runners
+  tasks:
+
+    - name: create install file download destination
+      file: 
+        path: "{{  docker_download_dest  }}"
+        state: directory
+    
+    - name: download file
+      get_url: 
+        url: "{{  github_runner_download_src  }}"
+        dest: "{{  github_runner_download_dest  }}"
+
+    - name: unzip and install github runner
+      shell: tar xzf "{{ github_runner_download_dest }}"
+      args:
+        chdir: "{{  docker_download_dest  }}"
+      become: yes
+
+# Runner is set to run in unattended/non-interactive mode. This will set the runner name to the hostname of the runner. Next step is to increase token expiration time.
+
+    - name: configure runner
+      shell: sudo RUNNER_ALLOW_RUNASROOT="1" ./config.sh --unattended --url "github url" --token "{{ registration_token }}" --labels 
+      args:
+        chdir: "{{  docker_download_dest  }}"
+    
+    - name: run runner
+      shell: ./run.sh
+      args:
+        chdir: "{{  docker_download_dest  }}"
+
+    - name: install runner service
+      shell: sudo RUNNER_ALLOW_RUNASROOT="1" ./svc.sh install
+      args: 
+        chdir: "{{  docker_download_dest  }}"
+      become: yes
+
+    - name: start runner service
+      shell: sudo RUNNER_ALLOW_RUNASROOT="1" ./svc.sh start
+      args: 
+        chdir: "{{  docker_download_dest  }}"
+      become: yes
+

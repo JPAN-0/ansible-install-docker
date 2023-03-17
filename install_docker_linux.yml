@@ -1,0 +1,66 @@
+---
+# -----------------------------------------------------------------------------
+# Tasks for Ubuntu - Install Docker 
+# --------------------------------------------------------------------------
+
+- name: include ubuntu linux variables
+  include_vars: ubuntu_linux.yml
+
+- name: Update apt and Install Required System Packages
+  hosts: linux_runners
+  tasks:
+
+    - name: Update apt
+
+      apt:
+        upgrade: yes
+        update_cache: yes
+      
+      become: yes
+      
+
+    
+    - name: Install Required System Packages
+
+      apt:
+        pkg: 
+          - curl
+          - python3-pip
+          - apt-transport-https
+          - ca-certificates
+          - gpg-agent
+          - software-properties-common
+
+        state: latest
+        update_cache: yes
+      become: yes 
+
+- name: Install Docker
+  hosts: linux_runners
+  tasks:
+
+    - name: Add Docker GPG apt Key
+
+      apt_key:
+        url: "{{ docker_ubuntu_gpg_key_url }}"
+        state: present
+
+    - name: Add Docker Repository
+
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ubuntu_lts_release}} stable
+        state: present
+        update_cache: yes
+
+    - name: Update apt and install docker-ce
+
+      apt:
+        pkg: 
+          - docker-ce
+        state: present
+        update_cache: yes
+
+    - name: Install Docker Module for Python
+
+      pip:
+        name: docker
